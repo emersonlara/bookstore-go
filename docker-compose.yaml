@@ -1,0 +1,22 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:10-alpine3.15
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bookstore
+    ports:
+      - 5432:5432
+
+  flyway:
+    image: flyway/flyway
+    command: -url=jdbc:postgresql://db:5432/bookstore -user=postgres -password=postgres -connectRetries=60 migrate
+    volumes:
+      - ./sql/migrations:/flyway/sql
+      - ./sql/drivers:/flyway/drivers
+    depends_on:
+       - db
+

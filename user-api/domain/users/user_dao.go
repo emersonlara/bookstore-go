@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"user-api/datasources/postgresql/users_db"
 	"user-api/utils/date_utils"
 	"user-api/utils/errors"
 )
@@ -11,6 +12,10 @@ var (
 )
 
 func (user *User) Get() *errors.RestErr {
+	if err := users_db.Client.Ping(); err != nil {
+		panic(err)
+	}
+
 	result := usersDB[user.Id]
 	if result == nil {
 		return errors.NewNotFoundError(fmt.Sprintf("User %d not found", user.Id))
