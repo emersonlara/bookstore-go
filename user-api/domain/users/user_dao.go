@@ -2,12 +2,15 @@ package users
 
 import (
 	"fmt"
+	"strings"
 	"user-api/datasources/postgresql/users_db"
+	"user-api/utils/date_utils"
 	"user-api/utils/errors"
 )
 
 const (
-	insertUserQuery = "INSERT INTO users_db.users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4) RETURNING id"
+	indexUniqueEmail = "users_email_key"
+	insertUserQuery  = "INSERT INTO users_db.users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4) RETURNING id"
 )
 
 var (
@@ -34,8 +37,13 @@ func (user *User) Get() *errors.RestErr {
 }
 
 func (user *User) Save() *errors.RestErr {
+	user.DateCreated = date_utils.GetNowString()
+
 	err := users_db.Client.QueryRow(insertUserQuery, user.FirstName, user.LastName, user.Email, user.DateCreated).Scan(&user.Id)
 	if err != nil {
+		if strings.Contains(err.Error(), indexUniqueEmail) {
+			return errors.NewBadRequestError(fmt.Sprintf("email %s already exists", user.Email))
+		}
 		return errors.NewInternalServerError(fmt.Sprintf("1. error when trying to save user: %s", err.Error()))
 	}
 
